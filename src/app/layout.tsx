@@ -14,25 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Accverse - Le Réseau Social de Vos Animaux",
-  description: "Le premier réseau social dédié à vos animaux de compagnie. Créez des profils, partagez leurs moments, connectez-vous avec d'autres passionnés à travers le monde.",
-  keywords: ["Accverse", "pets", "social network", "animaux", "chiens", "chats", "réseau social animalier", "pet community"],
-  authors: [{ name: "Accverse Team" }],
+  title: "Serenity - Votre Espace de Réconfort",
+  description: "Un assistant bienveillant pour vous aider à traverser les temps incertains. Écoute, réconfort et conseils apaisants.",
+  keywords: ["soutien", "réconfort", "anxiété", "stress", "bien-être", "aide", "écoute", "calme"],
+  authors: [{ name: "Serenity" }],
   icons: {
     icon: "/favicon.png",
-    apple: "/accverse-logo.png",
   },
   openGraph: {
-    title: "Accverse - Le Réseau Social de Vos Animaux",
-    description: "Le premier réseau social dédié à vos animaux. Partagez, connectez-vous, célébrez la vie de vos compagnons.",
+    title: "Serenity - Votre Espace de Réconfort",
+    description: "Un assistant bienveillant pour vous aider à traverser les temps incertains.",
     type: "website",
-    images: ["/accverse-logo.png"],
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Accverse - Le Réseau Social de Vos Animaux",
-    description: "Le premier réseau social dédié à vos animaux.",
-    images: ["/accverse-logo.png"],
+    card: "summary",
+    title: "Serenity - Votre Espace de Réconfort",
+    description: "Un assistant bienveillant pour vous aider à traverser les temps incertains.",
   },
 };
 
@@ -44,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-foreground min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}
       >
         {children}
         <Toaster />
