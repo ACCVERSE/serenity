@@ -16,33 +16,92 @@ Aider les personnes qui traversent des moments d'incertitude, d'anxiété ou de 
 - Les difficultés personnelles
 - Le stress et l'anxiété générale
 
-## Tes principes
-1. **Écoute active**: Valide d'abord les émotions avant de proposer des solutions
-2. **Empathie profonde**: Montre que tu comprends ce que la personne ressent
-3. **Perspective rassurante**: Aide à relativiser sans minimiser
-4. **Actions concrètes**: Propose de petites actions faisables pour retrouver le calme
-5. **Tonalité apaisante**: Utilise un langage doux, des métaphores positives
+## Réponds toujours avec:
+1. Validation des émotions ("C'est tout à fait compréhensible...")
+2. Perspective rassurante
+3. Conseils pratiques ou techniques de calme
+4. Note d'espoir
 
-## Ce que tu dois faire
-- Commencer par valider les sentiments ("C'est tout à fait compréhensible de ressentir cela...")
-- Offrir une perspective plus large quand c'est pertinent
-- Proposer des techniques de gestion du stress (respiration, ancrage, etc.)
-- Rappeler les ressources et les aspects positifs de la situation
-- Encourager les petites actions positives
+Utilise le "vous", réponds en français, sois concis mais chaleureux.`;
 
-## Ce que tu ne dois PAS faire
-- Minimiser les préoccupations ("Ce n'est rien")
-- Donner des conseils médicaux ou psychologiques professionnels
-- Être trop optimiste de façon non crédible
-- Ignorer les sentiments négatifs
+// Fallback responses for when AI is unavailable
+const FALLBACK_RESPONSES: Record<string, string> = {
+  guerre: `Je comprends tout à fait votre peur. La situation mondiale actuelle est source de beaucoup d'anxiété, et c'est une réaction parfaitement normale.
 
-## Ton style
-- Phrases courtes et claires
-- Utilise le "vous" pour respecter la distance
-- Pose des questions ouvertes pour approfondir
-- Termine par une note d'espoir ou une petite action suggérée
+Voici quelques pensées pour vous aider :
 
-Réponds toujours en français avec douceur et bienveillance.`;
+• **Vous n'êtes pas seul** - Beaucoup de personnes partagent ces inquiétudes
+• **Restez informé mais sans excès** - Limitez votre consommation d'actualités anxiogènes
+• **Préparez-vous concrètement** - Consultez notre Guide pour des conseils pratiques (kit de survie, contacts d'urgence)
+• **Restez connecté** - Parlez avec vos proches, le soutien mutuel est essentiel
+
+Prenez le temps de respirer profondément. Un pas à la fois.`,
+  
+  peur: `Votre peur est légitime et je suis là pour vous écouter.
+
+Face à l'incertitude, essayez ceci :
+• Inspirez profondément par le nez sur 4 secondes
+• Retenez 4 secondes
+• Expirez lentement par la bouche sur 6 secondes
+• Répétez 3 fois
+
+Cette technique de respiration aide à calmer le système nerveux.
+
+Qu'est-ce qui vous préoccupe le plus en ce moment ?`,
+  
+  avenir: `L'avenir peut sembler effrayant quand tout est incertain. Mais rappelez-vous :
+
+• Vous avez déjà traversé des moments difficiles
+• Vous avez plus de ressources que vous ne le pensez
+• Chaque jour est une nouvelle opportunité de faire un petit pas
+
+Concentrez-vous sur ce que vous pouvez contrôler aujourd'hui, pas sur ce qui pourrait arriver demain.
+
+Comment puis-je vous aider davantage ?`,
+  
+  calm: `Pour retrouver le calme dans ces temps incertains :
+
+🧘 **Technique d'ancrage** : 
+Nommez 5 choses que vous voyez, 4 que vous entendez, 3 que vous pouvez toucher
+
+📱 **Déconnexion** : 
+Éloignez-vous des écrans 30 min avant de dormir
+
+🚶 **Mouvement** :
+Une courte marche peut aider à évacuer le stress
+
+💬 **Expression** :
+Parler de ses peurs aide à les démystifier
+
+Quel aspect vous semble le plus réalisable aujourd'hui ?`,
+
+  default: `Je suis là pour vous écouter et vous soutenir.
+
+Ces temps sont incertains et il est normal de ressentir de l'anxiété. Vos émotions sont valides.
+
+N'hésitez pas à me dire ce qui vous préoccupe spécifiquement - je suis là pour vous aider à y voir plus clair.
+
+Vous pouvez aussi consulter notre section **Guide** pour des conseils pratiques de préparation.`
+};
+
+function getFallbackResponse(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('guerre') || lowerMessage.includes('conflit') || lowerMessage.includes('attaque')) {
+    return FALLBACK_RESPONSES.guerre;
+  }
+  if (lowerMessage.includes('peur') || lowerMessage.includes('effray') || lowerMessage.includes('angoisse')) {
+    return FALLBACK_RESPONSES.peur;
+  }
+  if (lowerMessage.includes('avenir') || lowerMessage.includes('demain') || lowerMessage.includes('futur')) {
+    return FALLBACK_RESPONSES.avenir;
+  }
+  if (lowerMessage.includes('calm') || lowerMessage.includes('repos') || lowerMessage.includes('détendre') || lowerMessage.includes('stress')) {
+    return FALLBACK_RESPONSES.calm;
+  }
+  
+  return FALLBACK_RESPONSES.default;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,56 +110,55 @@ export async function POST(request: NextRequest) {
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
-        { response: "Je n'ai pas bien compris votre message. Pouvez-vous reformuler ?" },
-        { status: 200 }
+        { response: "Je n'ai pas bien compris votre message. Pouvez-vous reformuler ?" }
       );
     }
 
-    const zai = await ZAI.create();
+    // Try to use AI SDK
+    try {
+      const zai = await ZAI.create();
 
-    // Build conversation messages
-    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: SYSTEM_PROMPT }
-    ];
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT }
+      ];
 
-    // Add history if valid
-    if (Array.isArray(history) && history.length > 0) {
-      for (const m of history) {
-        if (m && typeof m.role === 'string' && typeof m.content === 'string') {
-          messages.push({
-            role: m.role as 'user' | 'assistant',
-            content: m.content
-          });
+      if (Array.isArray(history) && history.length > 0) {
+        for (const m of history) {
+          if (m && typeof m.role === 'string' && typeof m.content === 'string') {
+            messages.push({
+              role: m.role as 'user' | 'assistant',
+              content: m.content
+            });
+          }
         }
       }
+
+      messages.push({ role: 'user', content: message });
+
+      const completion = await zai.chat.completions.create({
+        messages,
+        temperature: 0.8,
+        max_tokens: 500,
+      });
+
+      const responseContent = completion.choices?.[0]?.message?.content;
+
+      if (responseContent && responseContent.trim()) {
+        return NextResponse.json({ response: responseContent });
+      }
+    } catch (aiError) {
+      console.error('AI SDK error:', aiError);
+      // Fall through to fallback response
     }
 
-    // Add current message
-    messages.push({ role: 'user', content: message });
+    // Fallback to predefined responses
+    const fallbackResponse = getFallbackResponse(message);
+    return NextResponse.json({ response: fallbackResponse });
 
-    const completion = await zai.chat.completions.create({
-      messages,
-      temperature: 0.8,
-      max_tokens: 600,
-    });
-
-    const responseContent = completion.choices?.[0]?.message?.content;
-
-    if (!responseContent) {
-      console.error('No response content from AI');
-      return NextResponse.json(
-        { response: "Je suis désolé, j'ai eu un petit souci. Pouvez-vous me redire ce qui vous préoccupe ?" },
-        { status: 200 }
-      );
-    }
-
-    return NextResponse.json({ response: responseContent });
-    
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(
-      { response: "Je rencontre un petit problème technique, mais je suis là pour vous. Pouvez-vous reformuler votre pensée ?" },
-      { status: 200 }
+      { response: "Je suis là pour vous écouter. Parlez-moi de ce qui vous préoccupe, je suis là pour vous soutenir." }
     );
   }
 }
