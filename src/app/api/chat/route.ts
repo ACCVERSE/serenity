@@ -46,43 +46,61 @@ Réponds toujours en français avec douceur et bienveillance.`;
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, history = [] } = await request.json();
+    const body = await request.json();
+    const { message, history = [] } = body;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
-        { error: 'Message requis' },
-        { status: 400 }
+        { response: "Je n'ai pas bien compris votre message. Pouvez-vous reformuler ?" },
+        { status: 200 }
       );
     }
 
     const zai = await ZAI.create();
 
-    // Build conversation history
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content
-      })),
-      { role: 'user' as const, content: message }
+    // Build conversation messages
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: SYSTEM_PROMPT }
     ];
+
+    // Add history if valid
+    if (Array.isArray(history) && history.length > 0) {
+      for (const m of history) {
+        if (m && typeof m.role === 'string' && typeof m.content === 'string') {
+          messages.push({
+            role: m.role as 'user' | 'assistant',
+            content: m.content
+          });
+        }
+      }
+    }
+
+    // Add current message
+    messages.push({ role: 'user', content: message });
 
     const completion = await zai.chat.completions.create({
       messages,
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature: 0.8,
+      max_tokens: 600,
     });
 
-    const response = completion.choices[0]?.message?.content || 
-      "Je suis là pour vous écouter. Pouvez-vous m'en dire plus sur ce qui vous préoccupe ?";
+    const responseContent = completion.choices?.[0]?.message?.content;
 
-    return NextResponse.json({ response });
+    if (!responseContent) {
+      console.error('No response content from AI');
+      return NextResponse.json(
+        { response: "Je suis désolé, j'ai eu un petit souci. Pouvez-vous me redire ce qui vous préoccupe ?" },
+        { status: 200 }
+      );
+    }
+
+    return NextResponse.json({ response: responseContent });
     
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(
-      { error: 'Une erreur est survenue. Veuillez réessayer.' },
-      { status: 500 }
+      { response: "Je rencontre un petit problème technique, mais je suis là pour vous. Pouvez-vous reformuler votre pensée ?" },
+      { status: 200 }
     );
   }
 }
